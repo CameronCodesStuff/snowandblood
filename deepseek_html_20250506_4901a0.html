@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow & Blood: The Oligarch's Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Roboto+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --blood-red: #8b0000;
+            --gold: #d4af37;
+            --snow: #f0f8ff;
+            --dark: #0a0a0a;
+            --smoke: #333;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #000;
+            color: var(--snow);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(139,0,0,0.1) 0%, transparent 20%);
+        }
+        
+        #game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .snowflake {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.8;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh);
+            }
+        }
+        
+        .fire-effect {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 150px;
+            background: linear-gradient(to top, #8b0000, #ff4500, #ff8c00, #ffd700);
+            border-radius: 50% 50% 20% 20%;
+            filter: blur(10px);
+            opacity: 0.7;
+            z-index: 1;
+            animation: flicker 3s infinite alternate;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 0.7; height: 150px; }
+            50% { opacity: 0.4; height: 130px; }
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            color: var(--gold);
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.7);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            letter-spacing: 2px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px rgba(139, 0, 0, 0.7);
+            }
+            to {
+                text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 30px rgba(139, 0, 0, 0.8);
+            }
+        }
+        
+        .scene {
+            background-color: rgba(10, 10, 10, 0.8);
+            border: 1px solid var(--gold);
+            border-radius: 5px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 20px rgba(139, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scene::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(to right, transparent, var(--gold), transparent);
+        }
+        
+        .scene-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+        }
+        
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .choice-btn {
+            background-color: rgba(10, 10, 10, 0.7);
+            color: var(--snow);
+            border: 1px solid var(--gold);
+            padding: 0.8rem 1.5rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-align: left;
+        }
+        
+        .choice-btn:hover {
+            background-color: rgba(139, 0, 0, 0.3);
+            border-color: var(--blood-red);
+            transform: translateX(5px);
+        }
+        
+        .choice-btn::before {
+            content: '→';
+            position: absolute;
+            left: -20px;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+        
+        .choice-btn:hover::before {
+            left: 10px;
+            opacity: 1;
+        }
+        
+        .revolver {
+            width: 200px;
+            height: 100px;
+            margin: 2rem auto;
+            position: relative;
+            display: none;
+        }
+        
+        .revolver .barrel {
+            width: 180px;
+            height: 20px;
+            background: linear-gradient(to right, #333, #666);
+            position: absolute;
+            top: 40px;
+            left: 20px;
+            border-radius: 5px;
+        }
+        
+        .revolver .cylinder {
+            width: 60px;
+            height: 60px;
+            background: #444;
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            left: 0;
+            border: 3px solid #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .revolver .chamber {
+            width: 10px;
+            height: 10px;
+            background: #222;
+            border-radius: 50%;
+            position: absolute;
+        }
+        
+        .revolver-spin {
+            animation: spin 0.5s linear;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .blood-splatter {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M30,50 Q50,30 70,50 T90,50 T70,70 T50,90 T30,70 T10,50 T30,30 Z" fill="rgba(139,0,0,0.7)"/></svg>');
+            background-size: 200px 200px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+            transition: opacity 0.5s;
+        }
+        
+        .blood-visible {
+            opacity: 0.8;
+        }
+        
+        .ending-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+        
+        .ending-visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .ending-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            color: var(--blood-red);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .ending-text {
+            font-size: 1.2rem;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .restart-btn {
+            background-color: var(--blood-red);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            background-color: var(--gold);
+            color: var(--dark);
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .fade-in {
+            animation: fadeIn 1.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .typing {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid var(--gold);
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--gold) }
+        }
+        
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(10, 10, 10, 0.7);
+            border: 1px solid var(--gold);
+            color: var(--snow);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .scene {
+                padding: 1.5rem;
+            }
+            
+            .scene-text {
+                font-size: 1rem;
+            }
+            
+            .choice-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fire-effect"></div>
+    <div class="blood-splatter"></div>
+    
+    <div id="game-container" class="fade-in">
+        <h1>SNOW & BLOOD</h1>
+        <div class="scene">
+            <p class="scene-text" id="story-text">Deep in the frozen Russian wilderness, a group of powerful billionaires—ex-military, ex-KGB, and corrupt tycoons—gather around a campfire for their annual "hunting trip." But this year, the prey is <em>you</em>.</p>
+            <p class="scene-text">You wake up in the snow, dragged into their circle. A revolver lies on the table. The leader, Viktor, grins as he spins the weapon. The rules are simple: <strong>Play... or run.</strong></p>
+            
+            <div class="choices" id="main-choices">
+                <button class="choice-btn" onclick="startGame('play')">"I'll play." (Russian Roulette begins)</button>
+                <button class="choice-btn" onclick="startGame('run')">"I'd rather take my chances out there." (Escape into the forest)</button>
+            </div>
+        </div>
+        
+        <div class="revolver hidden" id="revolver">
+            <div class="cylinder">
+                <div class="chamber" style="transform: rotate(0deg) translate(25px)"></div>
+                <div class="chamber" style="transform: rotate(60deg) translate(25px)"></div>
+                <div class="chamber" style="transform: rotate(120deg) translate(25px)"></div>
+                <div class="chamber" style="transform: rotate(180deg) translate(25px)"></div>
+                <div class="chamber" style="transform: rotate(240deg) translate(25px)"></div>
+                <div class="chamber" style="transform: rotate(300deg) translate(25px)"></div>
+            </div>
+            <div class="barrel"></div>
+        </div>
+    </div>
+    
+    <div class="ending-screen" id="ending-screen">
+        <h2 class="ending-title" id="ending-title">ENDING TITLE</h2>
+        <p class="ending-text" id="ending-text">Ending description goes here.</p>
+        <button class="restart-btn" onclick="restartGame()">TRY AGAIN</button>
+    </div>
+    
+    <div class="sound-toggle" id="sound-toggle" onclick="toggleSound()">🔊</div>
+    
+    <audio id="gunshot" src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" preload="auto"></audio>
+    <audio id="gunclick" src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" preload="auto"></audio>
+    <audio id="snow-wind" src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" loop preload="auto"></audio>
+    <audio id="fire-sound" src="data:audio/mpeg;base64,SUQzBAAAAAABEVRYWFgAAAAtAAADY29tbWVudABCaWdTb3VuZEJhbmsuY29tIC8gTGFTb25vdGhlcXVlLm9yZwBURU5DAAAAHQAAA1N3aXRjaCBQbHVzIMKpIE5DSCBTb2Z0d2FyZQBUSVQyAAAABgAAAzIyMzUAVFNTRQAAAA8AAANMYXZmNTcuODMuMTAwAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV" loop preload="auto"></audio>
+    
+    <script>
+        // Game state
+        let gameState = {
+            soundOn: true,
+            hasPlayed: false,
+            bulletPosition: Math.floor(Math.random() * 6)
+        };
+        
+        // DOM elements
+        const storyText = document.getElementById('story-text');
+        const mainChoices = document.getElementById('main-choices');
+        const revolver = document.getElementById('revolver');
+        const endingScreen = document.getElementById('ending-screen');
+        const endingTitle = document.getElementById('ending-title');
+        const endingText = document.getElementById('ending-text');
+        const soundToggle = document.getElementById('sound-toggle');
+        
+        // Audio elements
+        const gunshotSound = document.getElementById('gunshot');
+        const gunclickSound = document.getElementById('gunclick');
+        const snowWindSound = document.getElementById('snow-wind');
+        const fireSound = document.getElementById('fire-sound');
+        
+        // Initialize game
+        function initGame() {
+            createSnowflakes();
+            playAmbientSounds();
+            
+            // Set up event listeners
+            document.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (gameState.soundOn) {
+                        const clickSound = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU...');
+                        clickSound.volume = 0.3;
+                        clickSound.play();
+                    }
+                });
+            });
+        }
+        
+        // Create snowflakes
+        function createSnowflakes() {
+            const container = document.body;
+            const snowflakeCount = 50;
+            
+            for (let i = 0; i < snowflakeCount; i++) {
+                const snowflake = document.createElement('div');
+                snowflake.className = 'snowflake';
+                
+                // Random size between 2px and 6px
+                const size = Math.random() * 4 + 2;
+                snowflake.style.width = `${size}px`;
+                snowflake.style.height = `${size}px`;
+                
+                // Random position
+                snowflake.style.left = `${Math.random() * 100}%`;
+                snowflake.style.top = `${-size}px`;
+                
+                // Random animation duration between 5s and 15s
+                const duration = Math.random() * 10 + 5;
+                snowflake.style.animationDuration = `${duration}s`;
+                
+                // Random delay
+                snowflake.style.animationDelay = `${Math.random() * 5}s`;
+                
+                container.appendChild(snowflake);
+            }
+        }
+        
+        // Play ambient sounds
+        function playAmbientSounds() {
+            if (gameState.soundOn) {
+                snowWindSound.volume = 0.2;
+                fireSound.volume = 0.3;
+                snowWindSound.play();
+                fireSound.play();
+            }
+        }
+        
+        // Toggle sound
+        function toggleSound() {
+            gameState.soundOn = !gameState.soundOn;
+            soundToggle.textContent = gameState.soundOn ? '🔊' : '🔇';
+            
+            if (gameState.soundOn) {
+                playAmbientSounds();
+            } else {
+                snowWindSound.pause();
+                fireSound.pause();
+            }
+        }
+        
+        // Start game based on initial choice
+        function startGame(choice) {
+            if (choice === 'play') {
+                startRussianRoulette();
+            } else {
+                escapeIntoForest();
+            }
+        }
+        
+        // Russian Roulette path
+        function startRussianRoulette() {
+            storyText.innerHTML = `Viktor loads <strong>one bullet</strong> into the revolver, spins the chamber, and slides it to you.<br><br>
+            <em>"First round is yours. Pull the trigger... if you dare."</em>`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="playRound('self')">Point at your own head and pull the trigger</button>
+                <button class="choice-btn" onclick="playRound('viktor')">Suddenly aim at Viktor and fire</button>
+            `;
+            
+            revolver.classList.remove('hidden');
+        }
+        
+        // Play a round of Russian Roulette
+        function playRound(target) {
+            const spinAngle = Math.floor(Math.random() * 360);
+            revolver.querySelector('.cylinder').style.transform = `rotate(${spinAngle}deg)`;
+            revolver.querySelector('.cylinder').classList.add('revolver-spin');
+            
+            setTimeout(() => {
+                revolver.querySelector('.cylinder').classList.remove('revolver-spin');
+                
+                // Determine if this is the bullet position
+                const currentPosition = (spinAngle % 60) * (6 / 60);
+                const isBullet = Math.floor(currentPosition) === gameState.bulletPosition;
+                
+                if (isBullet) {
+                    // Bullet fires
+                    if (gameState.soundOn) gunshotSound.play();
+                    
+                    if (target === 'self') {
+                        showBloodEffect();
+                        setTimeout(() => {
+                            showEnding(
+                                "Just Another Statistic", 
+                                "The empty click was your last moment of hope. Viktor takes the gun next, aims casually at your head, and ends your story with a single pull of the trigger. The oligarchs toast with vodka as your body slumps into the snow."
+                            );
+                        }, 1000);
+                    } else {
+                        showBloodEffect();
+                        setTimeout(() => {
+                            storyText.innerHTML = `The gun <strong>BANGS</strong> as Viktor's head snaps back violently. Chaos erupts as the other men scramble for weapons.`;
+                            
+                            mainChoices.innerHTML = `
+                                <button class="choice-btn" onclick="grabAndRun()">Grab Viktor's gold-lined coat and run into the woods</button>
+                                <button class="choice-btn" onclick="takeControl()">Take the gun and force the others to hand over their riches</button>
+                            `;
+                        }, 1500);
+                    }
+                } else {
+                    // Empty chamber
+                    if (gameState.soundOn) gunclickSound.play();
+                    
+                    if (target === 'self') {
+                        storyText.innerHTML = `<em>CLICK.</em> The chamber was empty. The men laugh as sweat drips down your face.<br><br>
+                        Viktor takes the gun with a smirk. <em>"My turn."</em> He casually points it at your forehead...`;
+                        
+                        setTimeout(() => {
+                            if (gameState.soundOn) gunshotSound.play();
+                            showBloodEffect();
+                            setTimeout(() => {
+                                showEnding(
+                                    "Just Another Statistic", 
+                                    "Viktor doesn't hesitate. The bullet enters your brain before you even hear the shot. As darkness takes you, the last thing you see is the oligarchs pouring vodka into your open mouth—a final insult."
+                                );
+                            }, 1000);
+                        }, 2000);
+                    } else {
+                        storyText.innerHTML = `<em>CLICK.</em> The gun fails to fire. Viktor's eyes widen for a moment before narrowing into slits of rage.<br><br>
+                        <em>"Stupid little rabbit,"</em> he growls as three men tackle you to the ground.`;
+                        
+                        setTimeout(() => {
+                            showEnding(
+                                "The Long Night", 
+                                "They don't kill you quickly. First comes the beating, then the branding with hot vodka bottles. When dawn finally comes, they dump your broken body in the snow—still alive, but not for long. The cold is almost a mercy."
+                            );
+                        }, 3000);
+                    }
+                }
+                
+                // Move bullet to next position for next round
+                gameState.bulletPosition = (gameState.bulletPosition + 1) % 6;
+            }, 500);
+        }
+        
+        // Escape into forest path
+        function escapeIntoForest() {
+            storyText.innerHTML = `You bolt into the dark forest. The men howl with laughter—they <em>love</em> a chase.<br><br>
+            The wind howls around you as you crash through the snow-laden pines. In the distance, you can make out train tracks or perhaps a faint light through the trees.`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="followTracks()">Follow the distant train tracks</button>
+                <button class="choice-btn" onclick="headForLight()">Head toward the faint light in the distance</button>
+            `;
+            
+            if (gameState.soundOn) {
+                snowWindSound.volume = 0.5;
+            }
+        }
+        
+        // Follow train tracks
+        function followTracks() {
+            storyText.innerHTML = `You stumble through knee-deep snow toward the tracks. The wind is brutal, stealing your breath with each gasp.<br><br>
+            After what feels like hours, you reach the tracks. <em>Which way?</em> The wind seems less severe to the east...`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="eastAlongTracks()">Follow tracks east (with the wind)</button>
+                <button class="choice-btn" onclick="westAlongTracks()">Follow tracks west (into the wind)</button>
+            `;
+        }
+        
+        // East along tracks (easier path)
+        function eastAlongTracks() {
+            storyText.innerHTML = `Moving with the wind at your back helps, but the cold still gnaws at your bones. Just as you're about to collapse, you spot a maintenance shed.<br><br>
+            The door is locked, but a heavy rock solves that problem. Inside: a space heater, emergency blankets, and—<em>thank God</em>—an old radio.`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="callForHelp()">Use the radio to call for help</button>
+                <button class="choice-btn" onclick="waitForMorning()">Hunker down and wait for morning</button>
+            `;
+        }
+        
+        // Call for help
+        function callForHelp() {
+            storyText.innerHTML = `The radio crackles to life. A voice responds in Russian—it's the military! They promise help within the hour.<br><br>
+            But as you wait, you hear engines approaching... too soon to be rescuers. Peering through a crack in the shed, you see Viktor's black Range Rover skid to a stop near the tracks.`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="surrenderToViktor()">Surrender—maybe he'll show mercy</button>
+                <button class="choice-btn" onclick="ambushViktor()">Prepare an ambush with tools from the shed</button>
+            `;
+        }
+        
+        // Ambush Viktor
+        function ambushViktor() {
+            showEnding(
+                "The Iron Price", 
+                "You swing a heavy wrench as Viktor enters, crushing his skull. His men freeze in shock—long enough for you to grab his pistol. Two quick shots drop the others.<br><br>When the military arrives, they find you wrapped in furs, drinking Viktor's cognac. The oligarch's documents in your pocket promise untold wealth... if you can survive the coming war with his allies."
+            );
+        }
+        
+        // West along tracks (harder path)
+        function westAlongTracks() {
+            showEnding(
+                "Frozen Fugitive", 
+                "Battling the wind exhausts you within minutes. When you collapse, the snow embraces you like a lover. As hypothermia sets in, you dream of warmth—only to wake briefly as wolves begin their feast."
+            );
+        }
+        
+        // Head for light
+        function headForLight() {
+            storyText.innerHTML = `The light flickers like a mirage through the trees. As you approach, the silhouette of an ancient dacha emerges—windows boarded, chimney smoking.<br><br>
+            An old woman answers your pounding. Her eyes widen at your state. <em>"Bozhe moi,"</em> she whispers, pulling you inside.`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="trustBabushka()">Accept her help</button>
+                <button class="choice-btn" onclick="stealFromBabushka()">Knock her out and take her supplies</button>
+            `;
+        }
+        
+        // Trust babushka
+        function trustBabushka() {
+            showEnding(
+                "Babushka's Blessing", 
+                "The old woman turns out to be the mother of a high-ranking FSB officer. When she learns of Viktor's 'hunt,' she makes a phone call. By dawn, Spetsnaz teams raid the oligarchs' camp.<br><br>You're given a new identity and a modest stipend—enough to start over far from Russia's frozen hell."
+            );
+        }
+        
+        // Grab and run after shooting Viktor
+        function grabAndRun() {
+            showEnding(
+                "The Frozen Fugitive", 
+                "Viktor's coat is lined with diamonds and euros, but the forest is merciless. You make it ten miles before the cold takes you. When hunters find your body months later, the diamonds still glitter—a cruel joke for whoever digs your grave."
+            );
+        }
+        
+        // Take control after shooting Viktor
+        function takeControl() {
+            showEnding(
+                "The New Tsar", 
+                "The remaining oligarchs, shaken by Viktor's death, submit to your demands. Within hours, you control assets worth billions.<br><br>But power in Russia is a knife fight. The first assassination attempt comes within a week. The second... well, at least you'll die rich."
+            );
+        }
+        
+        // Show blood effect
+        function showBloodEffect() {
+            const blood = document.querySelector('.blood-splatter');
+            blood.classList.add('blood-visible');
+            
+            setTimeout(() => {
+                blood.classList.remove('blood-visible');
+            }, 2000);
+        }
+        
+        // Show ending screen
+        function showEnding(title, text) {
+            endingTitle.textContent = title;
+            endingText.innerHTML = text;
+            endingScreen.classList.add('ending-visible');
+            
+            // Hide other game elements
+            document.getElementById('game-container').style.opacity = '0';
+        }
+        
+        // Restart game
+        function restartGame() {
+            endingScreen.classList.remove('ending-visible');
+            document.getElementById('game-container').style.opacity = '1';
+            
+            // Reset story
+            storyText.innerHTML = `Deep in the frozen Russian wilderness, a group of powerful billionaires—ex-military, ex-KGB, and corrupt tycoons—gather around a campfire for their annual "hunting trip." But this year, the prey is <em>you</em>.<br><br>
+            You wake up in the snow, dragged into their circle. A revolver lies on the table. The leader, Viktor, grins as he spins the weapon. The rules are simple: <strong>Play... or run.</strong>`;
+            
+            mainChoices.innerHTML = `
+                <button class="choice-btn" onclick="startGame('play')">"I'll play." (Russian Roulette begins)</button>
+                <button class="choice-btn" onclick="startGame('run')">"I'd rather take my chances out there." (Escape into the forest)</button>
+            `;
+            
+            revolver.classList.add('hidden');
+            
+            // Reset bullet position
+            gameState.bulletPosition = Math.floor(Math.random() * 6);
+        }
+        
+        // Initialize game when page loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>
